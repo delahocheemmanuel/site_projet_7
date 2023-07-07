@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Book = require('../models/Book');
+
+
+
+const cors = require('cors');
 
 const app = express();
 
@@ -12,7 +15,8 @@ mongoose
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log('Connexion à MongoDB échouée !'));
 
-app.use(express.json());
+    app.use(cors()); // Utilisez le middleware cors
+    app.use(express.json());
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
