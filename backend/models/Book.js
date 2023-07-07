@@ -8,4 +8,4 @@ const bookSchema = mongoose.Schema({
     year: { type: Number, required: true },
 });
 
-module.exports = mongoose.model('book', bookSchema);
+module.exports = mongoose.model('Book', bookSchema);
