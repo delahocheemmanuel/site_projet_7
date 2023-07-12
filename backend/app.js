@@ -29,6 +29,9 @@ mongoose
       next()
   })  
 
+  app.use('/api/books', require('./routes/book'));
+  app.use('/api/auth', require('./routes/user'));
+
 module.exports = app;
 
 
