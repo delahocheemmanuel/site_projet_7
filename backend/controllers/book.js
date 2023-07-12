@@ -24,10 +24,19 @@ exports.getBestRating = (req, res, next) => {
 
 // POST a book
 exports.postBook = (req, res, next) => {
+    const bookObject = JSON.parse(req.body.book);
+    delete bookObject._id;
+    delete bookObject._userId;
     const book = new Book({
-        ...req.body,
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     });
-}
+  
+    book.save()
+    .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
+    .catch(error => { res.status(400).json( { error })})
+ };
 
 // POST a rating
 exports.postRating = (req, res, next) => {
@@ -37,21 +46,33 @@ exports.postRating = (req, res, next) => {
 };
 
 // PUT a book
-exports.putBook = (req, res, next) => {
+exports.postBook = (req, res, next) => {
     const bookObject = req.file ? {
         ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
-    Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Modified!' }))
-        .catch((error) => res.status(400).json({ error }));
-};
+  
+    delete BookObject._userId;
+    Book.findOne({_id: req.params.id})
+        .then((book) => {
+            if (book.userId != req.auth.userId) {
+                res.status(401).json({ message : 'Not authorized'});
+            } else {
+                Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
+                .then(() => res.status(200).json({message : 'Objet modifié!'}))
+                .catch(error => res.status(401).json({ error }));
+            }
+        })
+        .catch((error) => {
+            res.status(400).json({ error });
+        });
+ };
 
 
 // DELETE a book
 exports.deleteBook = (req, res, next) => {
     Book.deleteOne({ _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Deleted!' }))
+        .then(book => res.status(200).json({ message: 'Deleted!' }))
         .catch((error) => res.status(400).json({ error }));
 };
 

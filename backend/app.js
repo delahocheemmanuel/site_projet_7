@@ -1,6 +1,8 @@
 const express = require('express');
-const app = express();
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const user = require('./models/user');
+const path = require('path');
 
 const mongoDBURI = 'mongodb+srv://delahochemanu:HUwo3jHeyWzAsFni@book.th4l1um.mongodb.net/?retryWrites=true&w=majority';
 
@@ -29,8 +31,10 @@ mongoose
       next()
   })  
 
-  app.use('/api/books', require('./routes/book'));
-  app.use('/api/auth', require('./routes/user'));
+  app.use(bodyParser.json());
+  app.use('/images', express.static(path.join(__dirname, 'images')));
+  app.use('/api/books',bookRoutes);
+  app.use('/api/auth', userRoutes);
 
 module.exports = app;
 
