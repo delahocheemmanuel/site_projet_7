@@ -1,5 +1,13 @@
 const express = require('express');
-const app = express();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const mongoose = require('mongoose');
+const router = express.Router();
+
+router.get('/books')  //
+router.get('/books/:id')  //
+router.get('bestrating') //
+router.post('/books') //
+router.post(':id/rating')  //
+router.put('/books/:id')  //
+router.delete('/books/:id')  //
+
+
+module.exports = router; // 3

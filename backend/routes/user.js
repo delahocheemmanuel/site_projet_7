@@ -1,5 +1,7 @@
 const express = require('express');
-const app = express();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const mongoose = require('mongoose');
+const router = express.Router();
+
+router.post('/signup',) // Inscription
+router.post('/login',) // Connexion
+
+module.exports = router; // 3
