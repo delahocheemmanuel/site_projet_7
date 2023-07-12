@@ -1,5 +1,10 @@
-const express = require('express');
-const app = express();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const mongoose = require('mongoose');
+const Book = require('../models/Book');
+
+
+
+// GET all books
+exports.getBooks = (req, res, next) => {
+    Book.find()
+        .then((books) => res.status(200).json(books))
+        .catch((error) => res.status(400).json({ error }));
+};
