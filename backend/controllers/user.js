@@ -2,6 +2,8 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
+const userCtrl = require('../controllers/user');
+
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10) // 1
@@ -42,4 +44,9 @@ exports.login = (req, res, next) => {
         )
         .catch(error => res.status(500).json({ error }));
 }
+
+
+
+
+
 

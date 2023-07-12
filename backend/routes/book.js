@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
-
-router.get('/books')  //
-router.get('/books/:id')  //
-router.get('bestrating') //
-router.post('/books') //
-router.post(':id/rating')  //
-router.put('/books/:id')  //
-router.delete('/books/:id')  //
+const bookCtrl = require('../controllers/book');
 
 
-module.exports = router; // 3
+router.get('/books',bookCtrl.getAllBooks)  //
+router.get('/books/:id' ,bookCtrl.getOneBook)  //
+router.get('bestrating',bookCtrl.getBestRating) //
+router.post('/books',bookCtrl.postBook) //
+router.post(':id/rating',bookCtrl.postRating)  //
+router.put('/books/:id',bookCtrl.putBook)  //
+router.delete('/books/:id',bookCtrl.deleteBook)  //
+
+
+module.exports = router; // 
