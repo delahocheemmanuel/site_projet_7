@@ -29,14 +29,16 @@ exports.postBook = (req, res, next) => {
     delete bookObject._userId;
     const book = new Book({
         ...bookObject,
-        userId: req.auth.userId,
+        userId: req.auth && req.auth.userId, // Vérification de nullité
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     });
 
     book.save()
         .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
         .catch((error) => res.status(400).json({ error }));
+        console.log(book);
 };
+
 
 // POST a rating
 exports.postRating = (req, res, next) => {
@@ -45,7 +47,8 @@ exports.postRating = (req, res, next) => {
         .catch((error) => res.status(400).json({ error }));
 };
 
-// PUT a book
+
+
 exports.putBook = (req, res, next) => {
     const bookObject = req.file
         ? {
@@ -57,7 +60,7 @@ exports.putBook = (req, res, next) => {
     delete bookObject._userId;
     Book.findOne({ _id: req.params.id })
         .then((book) => {
-            if (book.userId != req.auth.userId) {
+            if (book && book.userId != req.auth.userId) { // Vérification de nullité
                 res.status(401).json({ message: 'Not authorized' });
             } else {
                 Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
@@ -70,11 +73,10 @@ exports.putBook = (req, res, next) => {
         });
 };
 
-// DELETE a book
 exports.deleteBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
         .then((book) => {
-            if (book.userId != req.auth.userId) {
+            if (book && book.userId != req.auth.userId) { // Vérification de nullité
                 res.status(401).json({ message: 'Not authorized' });
             } else {
                 const filename = book.imageUrl.split('/images/')[1];
