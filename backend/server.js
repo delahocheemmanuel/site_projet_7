@@ -6,9 +6,7 @@ require("dotenv").config({ path: './.env' });
 
 require("./app.js"); // app.js est le fichier où toutes les routes sont définies
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.json()); // Middleware pour parser les requêtes JSON
-app.use(bodyParser.urlencoded({ extended: true })); // Middleware pour parser les données du formulaire
+
 
 app.use("/", require("./routes/user")); // Middleware pour les routes des utilisateurs
 app.use("/", require("./routes/book")); // Middleware pour les routes des livres
