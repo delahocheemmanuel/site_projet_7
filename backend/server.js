@@ -1,15 +1,23 @@
 const express = require('express');
 const http = require('http');
+const mongoose = require('mongoose');
 const app = express();
 
-require("dotenv").config({ path: './.env' });
+require('dotenv').config({ path: './.env' });
 
-require("./app.js"); // app.js est le fichier où toutes les routes sont définies
+// Connexion à la base de données MongoDB avec Mongoose
+mongoose.connect(process.env.MONGODB_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+    console.log('Connexion à la base de données réussie.');
+  })
+  .catch((error) => {
+    console.error('Erreur lors de la connexion à la base de données:', error);
+  });
 
-
-
-app.use("/", require("./routes/user")); // Middleware pour les routes des utilisateurs
-app.use("/", require("./routes/book")); // Middleware pour les routes des livres
+require('./app.js'); // app.js est le fichier où toutes les routes sont définies
 
 // Middleware pour gérer les en-têtes CORS
 app.use((req, res, next) => {
@@ -25,9 +33,11 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/users', require('./routes/user.js')); // Middleware pour les routes des utilisateurs
+app.use('/books', require('./routes/book.js')); // Middleware pour les routes des livres
+
 const server = http.createServer(app);
 
 server.listen(process.env.PORT, () => {
   console.log(`Le serveur est en cours d'exécution sur le port ${process.env.PORT}.`);
 });
-
