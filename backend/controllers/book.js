@@ -4,27 +4,41 @@ const fs = require('fs');
 
 
 // POST a book
-exports.postBook = async (req, res) => {
+exports.postBook = (req, res, next) => {
     try {
-        const bookObject = JSON.parse(req.body.book)
-        delete bookObject._id
-        delete bookObject._userId
-
-        const book = new Book({
-            ...bookObject,
+      const bookObject = JSON.parse(req.body.book);
+      console.log(bookObject);
+      delete bookObject._id;
+      delete bookObject._userId;
+  
+      const book = new Book({
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+        ratings: [
+          {
             userId: req.auth.userId,
-            imageUrl: `${req.protocol}://${req.get('host')}/images/${
-                req.file.filename
-            }`,
+            grade: bookObject.ratings[0].grade,
+          },
+        ],
+        averageRating: bookObject.ratings[0].grade,
+      });
+  
+      book
+        .save()
+        .then(() => {
+          res.status(201).json({ message: "Objet enregistré !" });
         })
-
-        await book.save()
-
-        res.status(201).json({ message: 'Livre enregistré !' })
+        .catch((error) => {
+          res.status(400).json({ error });
+        });
     } catch (error) {
-        res.status(400).json({ error })
+      res.status(400).json({ error });
     }
-}
+  };
+  
+
+
 
 // GET all books
 exports.getAllBooks = (req, res, next) => {
@@ -110,9 +124,46 @@ exports.getBestRating = (req, res, next) => {
 
 // POST a rating
 exports.postRating = (req, res, next) => {
-    Book.updateOne({ _id: req.params.id }, { rating: req.body.rating })
-        .then(() =>
-            res.status(200).json({ message: 'Rating updated successfully!' })
-        )
-        .catch((error) => res.status(400).json({ error }));
+    const bookId = req.params.id;
+    const { userId, rating } = req.body;
+  
+    // Vérifier si la note est valide (comprise entre 0 et 5)
+    if (rating < 0 || rating > 5) {
+      return res
+        .status(400)
+        .json({ message: "La note doit être comprise entre 0 et 5" });
+    }
+    Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        return res.status(404).json({ message: "Livre non trouvé" });
+      }
+
+      // Vérifier si l'utilisateur a déjà noté ce livre
+      const userRatingIndex = book.ratings.findIndex(
+        (r) => r.userId === userId
+      );
+      if (userRatingIndex !== -1) {
+        return res
+          .status(400)
+          .json({ message: "L'utilisateur a déjà noté ce livre" });
+      }
+
+      // Ajouter la nouvelle note dans le tableau "ratings"
+      book.ratings.push({ userId, grade: rating });
+
+
+      // Enregistrer les modifications du livre
+      book
+        .save()
+        .then((updatedBook) => {
+          res.status(200).json(updatedBook);
+        })
+        .catch((error) => {
+          res.status(500).json({ error });
+        });
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
 };

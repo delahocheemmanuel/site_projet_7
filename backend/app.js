@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 
@@ -14,6 +15,8 @@ mongoose
 
 const app = express();
 
+app.use(cors());
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -25,8 +28,7 @@ app.use((req, res, next) => {
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
   );
   next();
-});
-
+  });
 app.use(express.json());
 
 app.use("/api/books", booksRoutes);
