@@ -1,16 +1,18 @@
 const Book = require('../models/Book');
 const fs = require('fs');
 
-
-
 // POST a book
 exports.postBook = (req, res, next) => {  
-    
+    try {
+      // Parsing du livre depuis la requête
       const bookObject = JSON.parse(req.body.book);
       console.log(bookObject);
+      
+      // Suppression des propriétés inutiles
       delete bookObject._id;
       delete bookObject._userId;
   
+      // Création d'une nouvelle instance de Book
       const book = new Book({
         ...bookObject,
         userId: req.auth.userId,
@@ -24,6 +26,7 @@ exports.postBook = (req, res, next) => {
         averageRating: bookObject.ratings[0].grade,
       });
   
+      // Sauvegarde du livre dans la base de données
       book
         .save()
         .then(() => {
@@ -32,8 +35,12 @@ exports.postBook = (req, res, next) => {
         .catch((error) => {
           res.status(400).json({ error });
         });
-    
+    } catch (error) {
+      // Gestion des erreurs lors de la création du livre
+      res.status(400).json({ error });
+    }
   };
+
 // POST a rating
 exports.postRating = (req, res, next) => {
     const bookId = req.params.id;
@@ -45,6 +52,8 @@ exports.postRating = (req, res, next) => {
         .status(400)
         .json({ message: "La note doit être comprise entre 0 et 5" });
     }
+    
+    // Rechercher le livre par ID
     Book.findById(bookId)
     .then((book) => {
       if (!book) {
@@ -64,7 +73,6 @@ exports.postRating = (req, res, next) => {
       // Ajouter la nouvelle note dans le tableau "ratings"
       book.ratings.push({ userId, grade: rating });
 
-
       // Enregistrer les modifications du livre
       book
         .save()
@@ -79,7 +87,6 @@ exports.postRating = (req, res, next) => {
       res.status(500).json({ error });
     });
 };  
-
 
 
 // GET all books
@@ -97,9 +104,8 @@ exports.getOneBook = (req, res, next) => {
 
  }
 
-
-
- exports.putBook = (req, res, next) => {
+// Put a book
+exports.putBook = (req, res, next) => {
     const bookObject = req.file
         ? {
               ...JSON.parse(req.body.book),
@@ -113,7 +119,7 @@ exports.getOneBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
         .then((book) => {
             if (book && book.userId != req.auth.userId) {
-                // Vérification de nullité
+                // Vérification d'autorisation
                 res.status(401).json({ message: 'Not authorized' });
             } else {
                 Book.updateOne(
@@ -131,11 +137,12 @@ exports.getOneBook = (req, res, next) => {
         });
 };
 
+// Delete a book
 exports.deleteBook = (req, res, next) => {
     Book.findOne({ _id: req.params.id })
         .then((book) => {
             if (book && book.userId != req.auth.userId) {
-                
+                // Vérification d'autorisation
                 res.status(401).json({ message: 'Not authorized' });
             } else {
                 const filename = book.imageUrl.split('/images/')[1];
@@ -155,12 +162,9 @@ exports.deleteBook = (req, res, next) => {
         });
 };
 
-
-
 // GET best rated books
 exports.getBestRating = (req, res, next) => {
     Book.find({ rating: { $gte: 4 } })
         .then((books) => res.status(200).json(books))
         .catch((error) => res.status(400).json({ error }));
 };
-
