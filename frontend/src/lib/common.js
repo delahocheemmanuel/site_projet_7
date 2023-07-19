@@ -142,12 +142,6 @@ export async function addBook(data) {
     });
   } catch (err) {
     console.error(err);
-    if (err.response) {
-      // Si la réponse d'erreur contient un statut
-      console.log('Status:', err.response.status);
-      console.log('Data:', err.response.data);
-      console.log('Headers:', err.response.headers);
-    }
     return { error: true, message: err.message };
   }
 }
