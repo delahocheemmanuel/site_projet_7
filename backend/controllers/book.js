@@ -165,7 +165,13 @@ exports.deleteBook = (req, res, next) => {
 
 // GET best rated books
 exports.getBestRating = (req, res, next) => {
-    Book.find({ rating: { $gte: 4 } })
-        .then((books) => res.status(200).json(books))
-        .catch((error) => res.status(400).json({ error }));
+  Book.find()
+    .sort({ averageRating: -1 })
+    .limit(3)
+    .then((books) => {
+      res.status(200).json(books);
+    })
+    .catch((error) => {
+      res.status(500).json({ error });
+    });
 };
