@@ -63,10 +63,9 @@ exports.getOneBook = (req, res, next) => {
 exports.putBook = (req, res, next) => {
     const bookObject = req.file ? {
         ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/resized_${req.file.filename}` 
+        imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, "")}.webp`, 
     } : { ...req.body };
-    // Suppression de _userId auquel on ne peut faire confiance
-    delete bookObject._userId;
+    
     // Récupération du livre existant à modifier
     Book.findOne({_id: req.params.id})
         .then((book) => {
