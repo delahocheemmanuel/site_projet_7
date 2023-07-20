@@ -27,4 +27,3 @@ const storage = multer.diskStorage({
 
 // Exporter la configuration de multer en utilisant le stockage défini ci-dessus, permettant de gérer l'upload d'un seul fichier
 module.exports = multer({ storage: storage }).single('image');
-

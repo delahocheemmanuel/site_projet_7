@@ -26,31 +26,25 @@ app.set("port", port);
 
 // Fonction de gestion des erreurs liées au serveur
 const errorHandler = (error) => {
-  // Vérifier si l'erreur est liée à l'événement "listen" du serveur
   if (error.syscall !== "listen") {
-    throw error; // Lancer l'erreur pour qu'elle soit gérée ailleurs dans l'application
+    throw error;
   }
-
-  // Récupérer l'adresse du serveur en cours d'écoute
   const address = server.address();
-  // Déterminer le type d'adresse (chaîne de caractères ou objet)
-  const bind = typeof address === "string" ? "pipe " + address : "port: " + port;
-
-  // Gérer différents cas d'erreur en fonction du code d'erreur retourné
+  const bind =
+    typeof address === "string" ? "pipe " + address : "port: " + port;
   switch (error.code) {
-    case "EACCES": // L'adresse requiert des privilèges élevés pour l'écoute
+    case "EACCES":
       console.error(bind + " requires elevated privileges.");
-      process.exit(1); // Terminer le processus avec un code d'erreur (1)
+      process.exit(1);
       break;
-    case "EADDRINUSE": // L'adresse est déjà en cours d'utilisation (port déjà occupé)
+    case "EADDRINUSE":
       console.error(bind + " is already in use.");
-      process.exit(1); // Terminer le processus avec un code d'erreur (1)
+      process.exit(1);
       break;
     default:
-      throw error; // Lancer l'erreur pour qu'elle soit gérée ailleurs dans l'application
+      throw error;
   }
 };
-
 
 // Créer le serveur HTTP en utilisant l'application Express
 const server = http.createServer(app);
@@ -67,4 +61,3 @@ server.on("listening", () => {
 
 // Faire écouter le serveur sur le numéro de port spécifié
 server.listen(port);
-

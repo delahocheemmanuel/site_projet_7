@@ -4,6 +4,9 @@ const cors = require("cors"); // Importer le module CORS pour gérer les requêt
 const mongoose = require("mongoose"); // Importer le module Mongoose pour interagir avec la base de données MongoDB
 const path = require("path"); // Importer le module Path pour gérer les chemins de fichiers
 
+const rateLimit = require("express-rate-limit"); // Importer le module express-rate-limit pour limiter le nombre de requêtes envoyées par un utilisateur
+
+// Importer les routes
 const userRoutes = require("./routes/user"); // Importer les routes liées aux utilisateurs
 const booksRoutes = require("./routes/book"); // Importer les routes liées aux livres
 require("dotenv").config(); // Charger les variables d'environnement depuis le fichier .env
@@ -19,7 +22,6 @@ const app = express();
 
 // Utiliser CORS pour gérer les requêtes cross-origin
 app.use(cors());
-
 
 
 // Middleware pour parser les corps de requêtes en JSON

@@ -14,8 +14,8 @@ const resizeImg = (req, res, next) => {
 
     // Utiliser le module 'sharp' pour redimensionner l'image en conservant les proportions
     sharp(req.file.path)
-      .resize(824, 1040, "contain") // Redimensionner l'image dans les proportions données par le frontend
-      .webp({ quality: 90 }) // Convertir l'image en format .webp avec une qualité de 90
+      .resize(206, 260, "contain") // Redimensionner l'image dans les proportions données par le frontend
+      .webp({ quality: 100 }) // Convertir l'image en format .webp avec une qualité de 90
       .toFile(path.join("images", `resized-${filename}.webp`)) // Réécrire la nouvelle image en la renommant avec le préfixe "resized-" et l'extension .webp
       .then(() => {
         fs.unlink(req.file.path, () => {
