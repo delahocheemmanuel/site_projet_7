@@ -5,36 +5,48 @@ const average = require('../utils/average');
 
 // POST a book
 exports.postBook = async (req, res, next) => {
-  
-    // Parsing du livre depuis la requête
-    const bookObject = JSON.parse(req.body.book);  // req.body.book is a string
-    console.log(bookObject);  // bookObject is an object
-  
-    
-    
-  
-    // Création d'une nouvelle instance de Book
-    const book =  new Book({  // Book is a constructor  
-        ...bookObject, 
-      userId: req.auth.userId,      
-      imageUrl: `${req.protocol}://${req.get(
-        "host"
-      )}/images/resized-${req.file.filename.replace(/\.[^.]*$/, "")}.webp`,
-      ratings: {
-        userId: req.auth.userId,
-        grade: bookObject.ratings[0].grade,
-      },
-      averageRating: bookObject.ratings[0].grade,
-    });
-  
-    // Sauvegarde du livre dans la base de données
-    await book  // book is an object
-      .save()  // save() is a method of the mongoose model
-      .then(() => {  // then() is a method of the Promise object
-        res.status(201).json({ message: "Objet enregistré !" });  // res.status(201) is a method of the Response object
-      })
-      .catch((error) => res.status(400).json({ error,message: "Une erreur s'est produite lors de l'enregistrement du livre." }));
-  };
+    try {
+        // Parsing du livre depuis la requête
+        const bookObject = JSON.parse(req.body.book);
+        console.log(bookObject); // bookObject is an object
+
+        // Création d'une nouvelle instance de Book
+        const book = new Book({
+            ...bookObject,
+            userId: req.auth.userId,
+            imageUrl: `${req.protocol}://${req.get(
+                'host'
+            )}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
+            ratings: {
+                userId: req.auth.userId,
+                grade: bookObject.ratings[0].grade,
+            },
+            averageRating: bookObject.ratings[0].grade,
+        });
+
+        // Sauvegarde du livre dans la base de données
+        await book.save();
+
+        // Répond avec un statut 201 (Created) et un message de succès
+        res.status(201).json({ message: 'Objet enregistré !' });
+    } catch (error) {
+        // En cas d'erreur lors du traitement de la requête
+        // Répond avec un statut 400 (Bad Request) et un message d'erreur personnalisé
+        res.status(400).json({
+            error,
+            message: "Une erreur s'est produite lors de l'enregistrement du livre.",
+        });
+
+        // Delete the uploaded image
+        if (req.file) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) {
+                    console.log('Error deleting the image:', err);
+                }
+            });
+        }
+    }
+};
     
   
 
