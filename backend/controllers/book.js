@@ -1,6 +1,9 @@
 const Book = require('../models/book');
 const fs = require('fs');
 const average = require('../utils/average');
+const eraseImg = require('../utils/eraseImg');
+
+
 
 
 // POST a book
@@ -14,9 +17,7 @@ exports.postBook = async (req, res, next) => {
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get(
-        'host'
-      )}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
       ratings: {
         userId: req.auth.userId,
         grade: bookObject.ratings[0].grade,
@@ -33,25 +34,17 @@ exports.postBook = async (req, res, next) => {
     // Vérifier le type d'erreur et personnaliser le message en fonction de l'erreur spécifique
     if (error.name === 'ValidationError') {
       // Gérer l'erreur de validation (par exemple, la date n'est pas entre 0 et l'année en cours)
-      res.status(400).json({ error, message: "La date indiquée n'est pas valide." });
+      res.status(400).json({ error, message: "La date indiquée n'est pas valide. entre 0 et année actuelle" });
       
       // Effacement de l'image en cas d'erreur 400
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'image :', err);
-          }
-        });
+        eraseImg(req.file.path);
       }
     } else if (error.code === 11000) {
-      // Handle the duplicate key error when the combination of title and author is not unique
-      res.status(409).json({ error, message: 'A book with the same title and author already exists.' });
+      // Gérer l'erreur de duplication (par exemple, un livre avec le même titre et le même auteur existe déjà)
+      res.status(409).json({ error, message: 'Ce livre est déja publié' });
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'image :', err);
-          }
-        });
+        eraseImg(req.file.path);
       }
     } else {
       // Gérer toutes les autres erreurs
@@ -60,15 +53,13 @@ exports.postBook = async (req, res, next) => {
       
       // Effacement de l'image en cas d'erreur 500
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'image :', err);
-          }
-        });
+        eraseImg(req.file.path);
       }
     }
   }
 };
+
+
 
 
 // PUT a book
@@ -98,9 +89,7 @@ exports.putBook = (req, res, next) => {
 
       // Si l'image a été modifiée, on supprime l'ancienne
       if (req.file) {
-        fs.unlink(`images/${filename}`, (err) => {
-          if (err) console.log(err);
-        });
+        eraseImg(req.file.path);
       }
 
       // Mise à jour du livre
@@ -110,13 +99,9 @@ exports.putBook = (req, res, next) => {
           res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' })
         );
         // Effacement de l'image en cas d'erreur 400
-      if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'image :', err);
-          }
-        });
-      }
+        if (req.file) {
+          eraseImg(req.file.path);
+        }
     })
     .catch((error) => {
       // Gérer toutes les autres erreurs
@@ -125,11 +110,7 @@ exports.putBook = (req, res, next) => {
 
       // Effacement de l'image en cas d'erreur 500
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'image :', err);
-          }
-        });
+        eraseImg(req.file.path);
       }
     });
 };
@@ -191,52 +172,56 @@ exports.deleteBook = (req, res, next) => {
 
 // POST a rating
 exports.postRating = (req, res, next) => {
-    // On vérifie que la note est comprise entre 0 et 5
-    if (0 <= req.body.rating <= 5) {
-      // Stockage de la requête dans une constante
-      const ratingObject = { ...req.body, grade: req.body.rating };
-      // Suppression du faux _id envoyé par le front
-      delete ratingObject._id;
-      // Récupération du livre auquel on veut ajouter une note
-      Book.findOne({_id: req.params.id})
-          .then(book => {
-              // Création d'un tableau regroupant toutes les userId des utilisateurs ayant déjà noté le livre en question
-              const newRatings = book.ratings;
-              const userIdArray = newRatings.map(rating => rating.userId);
-              // On vérifie que l'utilisateur authentifié n'a jamais donné de note au livre en question
-              if (userIdArray.includes(req.auth.userId)) {
-                  // Si l'utilisateur a déjà donné une note au livre, renvoyer un statut 403 (Forbidden) avec un message d'erreur
-                  res.status(403).json({ message : 'Vous avez déjà donné une note à ce livre.' });
-              } else {
-                  // Ajout de la note
-                  newRatings.push(ratingObject);
-                  // Création d'un tableau regroupant toutes les notes du livre, et calcul de la moyenne des notes
-                  const grades = newRatings.map(rating => rating.grade);
-                  const averageGrades = average.average(grades);
-                  book.averageRating = averageGrades;
-                  // Mise à jour du livre avec la nouvelle note ainsi que la nouvelle moyenne des notes
-                  Book.updateOne({ _id: req.params.id }, { ratings: newRatings, averageRating: averageGrades, _id: req.params.id })
-                      .then(() => { 
-                          // Renvoyer un statut 201 (Created) avec une réponse vide indiquant que la note a été ajoutée avec succès
-                          res.status(201).json();
-                      })
-                      .catch(error => { 
-                          // Renvoyer un statut 400 (Bad Request) avec un message d'erreur en cas d'erreur lors de la mise à jour du livre
-                          res.status(400).json( { error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
-                      });
-                  // Renvoyer le livre en tant que réponse JSON avec le statut 200 (OK)
-                  res.status(200).json(book);
-              }
-          })
-          .catch((error) => {
-              // Renvoyer un statut 404 (Not Found) avec un message d'erreur en cas d'erreur lors de la recherche du livre
-              res.status(404).json({ error, message: 'Livre non trouvé !' });
-          });
-    } else {
-      // Renvoyer un statut 400 (Bad Request) avec un message d'erreur si la note n'est pas comprise entre 1 et 5
-      res.status(400).json({ message: 'La note doit être comprise entre 0 et 5' });
-    }
-  };
+  // On vérifie que la note est comprise entre 1 et 5 et n'est pas égale à 0
+  const rating = parseInt(req.body.rating, 10); // Parse la note en tant qu'entier
+  if (rating >= 1 && rating <= 5) {
+    // Stockage de la requête dans une constante
+    const ratingObject = { ...req.body, grade: rating };
+
+    // Récupération du livre auquel on veut ajouter une note
+    Book.findOne({ _id: req.params.id })
+      .then((book) => {
+        // Création d'un tableau regroupant toutes les userId des utilisateurs ayant déjà noté le livre en question
+        const newRatings = book.ratings;
+        const userIdArray = newRatings.map((rating) => rating.userId);
+        // On vérifie que l'utilisateur authentifié n'a jamais donné de note au livre en question
+        if (userIdArray.includes(req.auth.userId)) {
+          // Si l'utilisateur a déjà donné une note au livre, renvoyer un statut 403 (Forbidden) avec un message d'erreur
+          res.status(403).json({ message: 'Vous avez déjà donné une note à ce livre.' });
+        } else {
+          // Ajout de la note
+          newRatings.push(ratingObject);
+          // Création d'un tableau regroupant toutes les notes du livre, et calcul de la moyenne des notes
+          const grades = newRatings.map((rating) => rating.grade);
+          const averageGrades = average.average(grades);
+          book.averageRating = averageGrades;
+          // Mise à jour du livre avec la nouvelle note ainsi que la nouvelle moyenne des notes
+          Book.updateOne({ _id: req.params.id }, { ratings: newRatings, averageRating: averageGrades, _id: req.params.id })
+            .then(() => {
+              // Renvoyer un statut 201 (Created) avec une réponse vide indiquant que la note a été ajoutée avec succès
+              res.status(201).json();
+            })
+            .catch((error) => {
+              // Renvoyer un statut 400 (Bad Request) avec un message d'erreur en cas d'erreur lors de la mise à jour du livre
+              res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
+            });
+          // Renvoyer le livre en tant que réponse JSON avec le statut 200 (OK)
+          res.status(200).json(book);
+        }
+      })
+      .catch((error) => {
+        // Renvoyer un statut 404 (Not Found) avec un message d'erreur en cas d'erreur lors de la recherche du livre
+        res.status(404).json({ error, message: 'Livre non trouvé !' });
+      });
+  } else {
+    // Renvoyer un statut 400 (Bad Request) avec un message d'erreur si la note n'est pas comprise entre 1 et 5 ou si elle est égale à 0
+    res.status(400).json({ message: 'La note doit être comprise entre 1 et 5' });
+  }
+};
+
+            
+            
+            
   
 
 // GET best rated books

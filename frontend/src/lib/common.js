@@ -29,8 +29,10 @@ export async function getAuthenticatedUser() {
     }
     return { authenticated: true, user: { userId, token } };
   } catch (err) {
-    console.error('getAuthenticatedUser, Something Went Wrong', err);
-    return defaultReturnObject;
+    console.error('Erreur lors de la récupération de l\'utilisateur authentifié:', err);
+    // Afficher le message d'erreur sur le site (par exemple, avec une notification)
+    // Vous pouvez utiliser une bibliothèque de notification comme "react-toastify" pour cela
+    return alert(err.response.data.message);
   }
 }
 
@@ -40,11 +42,12 @@ export async function getBooks() {
       method: 'GET',
       url: `${API_ROUTES.BOOKS}`,
     });
-    // eslint-disable-next-line array-callback-return
     const books = formatBooks(response.data);
     return books;
   } catch (err) {
-    console.error(err);
+    console.error('Erreur lors de la récupération des livres:', err);
+    // Afficher le message d'erreur sur le site (par exemple, avec une notification)
+    // Vous pouvez utiliser une bibliothèque de notification comme "react-toastify" pour cela
     return [];
   }
 }
@@ -73,10 +76,12 @@ export async function getBestRatedBooks() {
     });
     return formatBooks(response.data);
   } catch (e) {
-    console.error(e);
+    console.error('Erreur lors de la récupération des meilleurs livres notés:', e);
+    // Afficher le message d'erreur sur le site (par exemple, avec une notification)
     return [];
   }
 }
+
 export async function deleteBook(id) {
   try {
     await axios.delete(`${API_ROUTES.BOOKS}/${id}`, {
@@ -86,8 +91,9 @@ export async function deleteBook(id) {
     });
     return true;
   } catch (err) {
-    console.error(err);
-    return false;
+    console.error('Erreur lors de la suppression du livre:', err);
+    // Afficher le message d'erreur sur le site (par exemple, avec une notification)
+    return alert(err.response.data.message);
   }
 }
 
@@ -108,7 +114,8 @@ export async function rateBook(id, userId, rating) {
     book.id = book._id;
     return book;
   } catch (e) {
-    console.error(e);
+    console.error('Erreur lors de l\'ajout de la note:', e);
+    // Afficher le message d'erreur sur le site (par exemple, avec une notification)
     return e.message;
   }
 }
@@ -132,7 +139,7 @@ export async function addBook(data) {
   bodyFormData.append('image', data.file[0]);
 
   try {
-    return await axios({
+    const response = await axios({
       method: 'post',
       url: `${API_ROUTES.BOOKS}`,
       data: bodyFormData,
@@ -140,9 +147,19 @@ export async function addBook(data) {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
+
+    // Si la réponse est réussie (statut 201), afficher un message de succès sur le site
+    if (response.status === 201) {
+      alert('Livre ajouté avec succès !');
+      // Vous pouvez également effectuer d'autres actions après l'ajout du livre ici
+    }
+
+    // Retourner la réponse pour un traitement ultérieur si nécessaire
+    return response.data;
   } catch (err) {
+    // Si une erreur se produit, afficher le message d'erreur renvoyé par le serveur
     console.error(err);
-    return { error: true, message: err.message };
+    return alert(err.response.data.message);
   }
 }
 
@@ -175,9 +192,18 @@ export async function updateBook(data, id) {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    return newBook;
+
+    // Si la réponse est réussie (statut 200), afficher un message de succès sur le site
+    if (newBook.status === 200) {
+      alert('Livre mis à jour avec succès !');
+      // Vous pouvez également effectuer d'autres actions après la mise à jour du livre ici
+    }
+
+    // Retourner la nouvelle version du livre pour un traitement ultérieur si nécessaire
+    return newBook.data;
   } catch (err) {
+    // Si une erreur se produit, afficher le message d'erreur renvoyé par le serveur
     console.error(err);
-    return { error: true, message: err.message };
+    return alert(data.message); // Afficher le message d'erreur sur le site
   }
 }

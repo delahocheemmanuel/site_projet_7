@@ -20,6 +20,7 @@ const bookSchema = mongoose.Schema({
     }
   ],
   averageRating: { type: Number },
+  timescamp: { type: Date, default: Date.now },
 });
 
 // On crée un index unique sur le titre et l'auteur pour éviter d'avoir plusieurs livres avec le même titre et le même auteur

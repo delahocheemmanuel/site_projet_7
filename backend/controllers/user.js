@@ -7,24 +7,35 @@ const User = require("../models/user");
 
 // Route pour créer un nouvel utilisateur
 exports.signup = (req, res, next) => {
-  // Hashage du mot de passe fourni par l'utilisateur (avec un coût de 10)
-  bcrypt
-    .hash(req.body.password, 10)
-    .then((hash) => {
-      // Création d'un nouvel utilisateur avec l'email et le mot de passe hashé
-      const user = new User({
-        email: req.body.email,
-        password: hash,
-      });
+  // Vérifier si un utilisateur existe déjà avec le même email
+  User.findOne({ email: req.body.email })
+    .then(existingUser => {
+      if (existingUser) {
+        // Si un utilisateur existant avec le même email est trouvé,
+        // renvoyer une réponse d'erreur personnalisée
+        return res.status(400).json({ message: "Email déjà utilisé !" });
+      }
 
-      // Sauvegarde du nouvel utilisateur dans la base de données
-      user
-        .save()
-        .then(() => res.status(201).json({ message: "Utilisateur créé !" }))
-        .catch((error) => res.status(400).json({ error }));
+      // Si aucun utilisateur existant avec le même email n'est trouvé, procéder à la création du nouvel utilisateur
+      // Hashage du mot de passe fourni par l'utilisateur (avec un coût de 10)
+      bcrypt.hash(req.body.password, 10)
+        .then(hash => {
+          // Création d'un nouvel utilisateur avec l'email et le mot de passe hashé
+          const user = new User({
+            email: req.body.email,
+            password: hash,
+          });
+
+          // Sauvegarde du nouvel utilisateur dans la base de données
+          user.save()
+            .then(() => res.status(201).json({ message: "Utilisateur créé !" }))
+            .catch(error => res.status(400).json({ error, message: "Utilisateur non créé !" }));
+        })
+        .catch(error => res.status(500).json({ error, message: "Un problème est survenu sur le serveur !" }));
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch(error => res.status(500).json({ error, message: "Un problème est survenu sur le serveur !" }));
 };
+
 
 // Route pour authentifier un utilisateur
 exports.login = (req, res, next) => {
@@ -57,7 +68,7 @@ exports.login = (req, res, next) => {
             }),
           });
         })
-        .catch((error) => res.status(500).json({ error }));
+        .catch((error) => res.status(500).json({ error,message: "un problème est survenue sur le serveur !" }));
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => res.status(400).json({ error,message: "Utilisateur non trouvée !" }));
 };

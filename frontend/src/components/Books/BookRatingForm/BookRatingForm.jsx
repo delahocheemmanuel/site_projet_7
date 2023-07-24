@@ -46,7 +46,7 @@ function BookRatingForm({
         <div className={styles.Stars}>
           {!userRated ? generateStarsInputs(rating, register) : displayStars(rating)}
         </div>
-        {!userRated ? <button type="submit">Valider</button> : null}
+        {!userRated ? <button type="submit" disabled={rating < 1}>Valider</button> : null}
       </form>
     </div>
   );

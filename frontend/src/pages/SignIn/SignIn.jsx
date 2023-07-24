@@ -19,6 +19,7 @@ function SignIn({ setUser }) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState({ error: false, message: '' });
+  const [backendError, setBackendError] = useState('');
   const signIn = async () => {
     try {
       setIsLoading(true);
@@ -39,8 +40,7 @@ function SignIn({ setUser }) {
         navigate('/');
       }
     } catch (err) {
-      console.log(err);
-      setNotification({ error: true, message: err.message });
+      setBackendError(err.response?.data?.message || 'Une erreur est survenue lors de la connexion.');
       console.log('Some error occured during signing in: ', err);
     } finally {
       setIsLoading(false);
@@ -64,7 +64,7 @@ function SignIn({ setUser }) {
       }
       setNotification({ error: false, message: 'Votre compte a bien été créé, vous pouvez vous connecter' });
     } catch (err) {
-      setNotification({ error: true, message: err.message });
+      setBackendError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
       console.log('Some error occured during signing up: ', err);
     } finally {
       setIsLoading(false);
@@ -76,7 +76,9 @@ function SignIn({ setUser }) {
       <Logo />
       <div className={`${styles.Notification} ${errorClass}`}>
         {notification.message.length > 0 && <p>{notification.message}</p>}
+        {backendError && <p>{backendError}</p>}
       </div>
+
       <div className={styles.Form}>
         <label htmlFor={email}>
           <p>Adresse email</p>
