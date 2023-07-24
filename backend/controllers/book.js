@@ -5,49 +5,135 @@ const average = require('../utils/average');
 
 // POST a book
 exports.postBook = async (req, res, next) => {
-    try {
-        // Parsing du livre depuis la requête
-        const bookObject = JSON.parse(req.body.book);
-        console.log(bookObject); // bookObject is an object
+  try {
+    // Parsing du livre depuis la requête
+    const bookObject = JSON.parse(req.body.book);
+    console.log(bookObject); // bookObject is an object
 
-        // Création d'une nouvelle instance de Book
-        const book = new Book({
-            ...bookObject,
-            userId: req.auth.userId,
-            imageUrl: `${req.protocol}://${req.get(
-                'host'
-            )}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
-            ratings: {
-                userId: req.auth.userId,
-                grade: bookObject.ratings[0].grade,
-            },
-            averageRating: bookObject.ratings[0].grade,
+    // Création d'une nouvelle instance de Book
+    const book = new Book({
+      ...bookObject,
+      userId: req.auth.userId,
+      imageUrl: `${req.protocol}://${req.get(
+        'host'
+      )}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
+      ratings: {
+        userId: req.auth.userId,
+        grade: bookObject.ratings[0].grade,
+      },
+      averageRating: bookObject.ratings[0].grade,
+    });
+
+    // Sauvegarde du livre dans la base de données
+    await book.save();
+
+    // Répond avec un statut 201 (Created) et un message de succès
+    res.status(201).json({ message: 'Objet enregistré !' });
+  } catch (error) {
+    // Vérifier le type d'erreur et personnaliser le message en fonction de l'erreur spécifique
+    if (error.name === 'ValidationError') {
+      // Gérer l'erreur de validation (par exemple, la date n'est pas entre 0 et l'année en cours)
+      res.status(400).json({ error, message: "La date indiquée n'est pas valide." });
+      
+      // Effacement de l'image en cas d'erreur 400
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'image :', err);
+          }
         });
-
-        // Sauvegarde du livre dans la base de données
-        await book.save();
-
-        // Répond avec un statut 201 (Created) et un message de succès
-        res.status(201).json({ message: 'Objet enregistré !' });
-    } catch (error) {
-        // En cas d'erreur lors du traitement de la requête
-        // Répond avec un statut 400 (Bad Request) et un message d'erreur personnalisé
-        res.status(400).json({
-            error,
-            message: "Une erreur s'est produite lors de l'enregistrement du livre.",
+      }
+    } else if (error.code === 11000) {
+      // Handle the duplicate key error when the combination of title and author is not unique
+      res.status(409).json({ error, message: 'A book with the same title and author already exists.' });
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'image :', err);
+          }
         });
-
-        // Delete the uploaded image
-        if (req.file) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) {
-                    console.log('Error deleting the image:', err);
-                }
-            });
-        }
+      }
+    } else {
+      // Gérer toutes les autres erreurs
+      console.error('Une erreur s\'est produite lors de l\'enregistrement du livre :', error);
+      res.status(500).json({ error, message: 'Une erreur s\'est produite lors de l\'enregistrement du livre.' });
+      
+      // Effacement de l'image en cas d'erreur 500
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'image :', err);
+          }
+        });
+      }
     }
+  }
 };
-    
+
+
+// PUT a book
+exports.putBook = (req, res, next) => {
+  const bookObject = req.file
+    ? {
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
+      }
+    : { ...req.body };
+
+  // Récupération du livre existant à modifier
+  Book.findOne({ _id: req.params.id })
+    .then((book) => {
+      // Vérifier si le livre existe
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé !' });
+      }
+
+      // Vérifier si l'utilisateur est le créateur du livre
+      if (book.userId !== req.auth.userId) {
+        return res.status(403).json({ message: 'Mauvais créateur' });
+      }
+
+      // Séparation du nom du fichier image existant
+      const filename = book.imageUrl.split('/images/')[1];
+
+      // Si l'image a été modifiée, on supprime l'ancienne
+      if (req.file) {
+        fs.unlink(`images/${filename}`, (err) => {
+          if (err) console.log(err);
+        });
+      }
+
+      // Mise à jour du livre
+      Book.updateOne({ _id: req.params.id }, { ...bookObject })
+        .then(() => res.status(200).json({ message: 'Objet modifié !' }))
+        .catch((error) =>
+          res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' })
+        );
+        // Effacement de l'image en cas d'erreur 400
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'image :', err);
+          }
+        });
+      }
+    })
+    .catch((error) => {
+      // Gérer toutes les autres erreurs
+      console.error('Une erreur s\'est produite lors de la mise à jour du livre :', error);
+      res.status(500).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
+
+      // Effacement de l'image en cas d'erreur 500
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'image :', err);
+          }
+        });
+      }
+    });
+};
+
   
 
 
@@ -60,48 +146,18 @@ exports.postBook = async (req, res, next) => {
 exports.getAllBooks = (req, res, next) => {
   Book.find()
       .then((books) => res.status(200).json(books))
-      .catch((error) => res.status(400).json({ error }));
+      .catch((error) => res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la récupération des livres.' }));
 };
 
 // GET one book
 exports.getOneBook = (req, res, next) => {
    Book.findOne({ _id: req.params.id })
        .then((book) => res.status(200).json(book))
-       .catch((error) => res.status(404).json({ error }));
+       .catch((error) => res.status(404).json({ error, message: 'Livre non trouvé !' }));
 
  }
 
-// Put a book
-exports.putBook = (req, res, next) => {
-    const bookObject = req.file ? {
-        ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, "")}.webp`, 
-    } : { ...req.body };
-    
-    // Récupération du livre existant à modifier
-    Book.findOne({_id: req.params.id})
-        .then((book) => {
-            // Le livre ne peut être mis à jour que par le créateur de sa fiche
-            if (book.userId != req.auth.userId) {
-                res.status(403).json({ message : '403: unauthorized request' });
-            } else {
-                // Séparation du nom du fichier image existant
-                const filename = book.imageUrl.split('/images/')[1];
-                // Si l'image a été modifiée, on supprime l'ancienne
-                req.file && fs.unlink(`images/${filename}`, (err => {
-                        if (err) console.log(err);
-                    })
-                );
-                // Mise à jour du livre
-                Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
-                    .then(() => res.status(200).json({ message: 'Objet modifié !' }))
-                    .catch(error => res.status(400).json({ error }));
-            }
-        })
-        .catch((error) => {
-            res.status(404).json({ error });
-        });
-};
+
 
 // Delete a book
 exports.deleteBook = (req, res, next) => {
@@ -111,7 +167,7 @@ exports.deleteBook = (req, res, next) => {
             // Vérifier si le livre existe et s'il appartient à l'utilisateur authentifié
             if (book && book.userId != req.auth.userId) {
                 // Si le livre n'appartient pas à l'utilisateur, renvoyer un statut 401 (Non autorisé) avec un message d'erreur
-                res.status(401).json({ message: 'Not authorized' });
+                res.status(401).json({ message: 'Non autorisé' });
             } else {
                 // Si le livre appartient à l'utilisateur, supprimer l'image associée au livre
                 const filename = book.imageUrl.split('/images/')[1];
@@ -122,13 +178,13 @@ exports.deleteBook = (req, res, next) => {
                             // Renvoyer un statut 200 (OK) avec un message de succès
                             res.status(200).json({ message: 'Objet supprimé !' })
                         )
-                        .catch((error) => res.status(401).json({ error }));
+                        .catch((error) => res.status(401).json({ error, message: 'Une erreur s\'est produite lors de la suppression du livre.' }));
                 });
             }
         })
         .catch((error) => {
             // Renvoyer un statut 500 (Internal Server Error) avec un message d'erreur en cas d'erreur lors de la recherche du livre
-            res.status(500).json({ error });
+            res.status(500).json({ error, message:'livre non trouvé' });
         });
 
 };
@@ -166,7 +222,7 @@ exports.postRating = (req, res, next) => {
                       })
                       .catch(error => { 
                           // Renvoyer un statut 400 (Bad Request) avec un message d'erreur en cas d'erreur lors de la mise à jour du livre
-                          res.status(400).json( { error });
+                          res.status(400).json( { error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
                       });
                   // Renvoyer le livre en tant que réponse JSON avec le statut 200 (OK)
                   res.status(200).json(book);
@@ -174,7 +230,7 @@ exports.postRating = (req, res, next) => {
           })
           .catch((error) => {
               // Renvoyer un statut 404 (Not Found) avec un message d'erreur en cas d'erreur lors de la recherche du livre
-              res.status(404).json({ error });
+              res.status(404).json({ error, message: 'Livre non trouvé !' });
           });
     } else {
       // Renvoyer un statut 400 (Bad Request) avec un message d'erreur si la note n'est pas comprise entre 1 et 5
@@ -200,7 +256,7 @@ exports.getBestRating = (req, res, next) => {
     //Capturer les erreurs éventuelles lors de l'exécution de la requête
     .catch((error) => {
       //Renvoyer une réponse JSON avec l'erreur (status HTTP 500 Internal Server Error)
-      res.status(500).json({ error });
+      res.status(500).json({ error, message: 'Une erreur s\'est produite lors de la récupération des livres.' });
     });
 };
 

@@ -8,6 +8,7 @@ const multer = require("../middleware/multer-config"); // Middleware pour la ges
 const resizeImg = require("../middleware/sharp"); // Middleware pour le redimensionnement des images
 const bookCtrl = require("../controllers/book"); // Contrôleur pour les actions liées aux livres
 
+
 // Définir les routes pour les livres
 
 // Route pour récupérer tous les livres
