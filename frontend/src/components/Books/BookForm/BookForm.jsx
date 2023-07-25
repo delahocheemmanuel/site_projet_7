@@ -109,7 +109,7 @@ function BookForm({ book, validate }) {
         </div>
         <input {...register('file')} type="file" id="file" />
       </label>
-      <button type="submit">Publier</button>
+      <button type="submit" disabled={rating < 1}>Publier</button>
     </form>
   );
 }

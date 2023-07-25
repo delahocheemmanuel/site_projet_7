@@ -34,7 +34,7 @@ exports.postBook = async (req, res, next) => {
     // Vérifier le type d'erreur et personnaliser le message en fonction de l'erreur spécifique
     if (error.name === 'ValidationError') {
       // Gérer l'erreur de validation (par exemple, la date n'est pas entre 0 et l'année en cours)
-      res.status(400).json({ error, message: "La date indiquée n'est pas valide. entre 0 et année actuelle" });
+      res.status(400).json({ error, message: "Tous les champs doivent être remplis et la date indiquée n'est pas valide. entre 0 et année actuelle" });
       
       // Effacement de l'image en cas d'erreur 400
       if (req.file) {
@@ -115,14 +115,6 @@ exports.putBook = (req, res, next) => {
     });
 };
 
-  
-
-
-  
-  
-
-
-
 // GET all books
 exports.getAllBooks = (req, res, next) => {
   Book.find()
@@ -137,8 +129,6 @@ exports.getOneBook = (req, res, next) => {
        .catch((error) => res.status(404).json({ error, message: 'Livre non trouvé !' }));
 
  }
-
-
 
 // Delete a book
 exports.deleteBook = (req, res, next) => {
@@ -218,11 +208,6 @@ exports.postRating = (req, res, next) => {
     res.status(400).json({ message: 'La note doit être comprise entre 1 et 5' });
   }
 };
-
-            
-            
-            
-  
 
 // GET best rated books
 // Cette fonction de contrôleur récupère les trois livres ayant les meilleures notes (averageRating) dans la base de données MongoDB
