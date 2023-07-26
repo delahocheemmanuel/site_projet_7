@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 // Schéma Book
 const bookSchema = mongoose.Schema({
   userId: { type: String, required: [true, "Le champ userId est requis."] },
-  title: { type: String, required: [true, "Le champ titre est requis."] },
-  author: { type: String, required: [true, "Le champ auteur est requis."] },
+  title: { type: String, required: [true, "Le champ titre est requis."] ,lowercase: true},
+  author: { type: String, required: [true, "Le champ auteur est requis."] ,lowercase: true},
   imageUrl: { type: String, required: [true, "Le champ imageUrl est requis."] },
   year: { 
     type: Number, 
