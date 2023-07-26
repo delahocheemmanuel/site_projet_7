@@ -7,7 +7,7 @@ const auth = require("../middleware/auth"); // Middleware pour l'authentificatio
 const multer = require("../middleware/multer-config"); // Middleware pour la gestion des fichiers uploadés
 const resizeImg = require("../middleware/sharp"); // Middleware pour le redimensionnement des images
 const bookCtrl = require("../controllers/book"); // Contrôleur pour les actions liées aux livres
-
+const limiter = require("../middleware/rate-limit"); // Middleware pour limiter le nombre de requêtes par IP
 
 // Définir les routes pour les livres
 
@@ -18,7 +18,7 @@ router.get("/", bookCtrl.getAllBooks);
 router.get("/bestrating", bookCtrl.getBestRating);
 
 // Route pour créer un nouveau livre (avec authentification et gestion des fichiers uploadés)
-router.post("/", auth, multer, resizeImg, bookCtrl.postBook);
+router.post("/", auth, limiter, multer, resizeImg, bookCtrl.postBook);
 
 // Route pour récupérer un livre par son ID
 router.get("/:id", bookCtrl.getOneBook);

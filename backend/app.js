@@ -3,7 +3,7 @@ const express = require('express'); // Importer le module Express pour créer l'
 const cors = require('cors'); // Importer le module CORS pour gérer les requêtes cross-origin
 const mongoose = require('mongoose'); // Importer le module Mongoose pour interagir avec la base de données MongoDB
 const path = require('path'); // Importer le module Path pour gérer les chemins de fichiers
-const rateLimit = require("express-rate-limit"); // Importer le module express-rate-limit pour limiter le nombre de requêtes par IP
+
 
 
 // Importer les routes
@@ -25,15 +25,6 @@ const app = express();
 
 // Utiliser CORS pour gérer les requêtes cross-origin
 app.use(cors());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // 100 requests per windowMs
-  message: 'Vous avez atteint la limite de requêtes. Réessayez plus tard.', // Votre message d'erreur personnalisé
-});
-
-app.use(limiter);
-
 
 
 // Middleware pour parser les corps de requêtes en JSON
