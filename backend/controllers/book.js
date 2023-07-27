@@ -62,15 +62,7 @@ exports.postBook = async (req, res, next) => {
 
 
 
-// PUT a book
 exports.putBook = (req, res, next) => {
-  const bookObject = req.file
-    ? {
-        ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
-      }
-    : { ...req.body };
-
   // Récupération du livre existant à modifier
   Book.findOne({ _id: req.params.id })
     .then((book) => {
@@ -87,33 +79,43 @@ exports.putBook = (req, res, next) => {
       // Séparation du nom du fichier image existant
       const filename = book.imageUrl.split('/images/')[1];
 
-      // Si l'image a été modifiée, on supprime l'ancienne
-      if (req.file) {
-        eraseImg(req.file.path);
-      }
+      // Mise à jour du livre avec les données de req.body
+      const bookObject = {
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/resized-${req.file.filename.replace(/\.[^.]*$/, '')}.webp`,
+      };
 
       // Mise à jour du livre
       Book.updateOne({ _id: req.params.id }, { ...bookObject })
-        .then(() => res.status(200).json({ message: 'Objet modifié !' }))
-        .catch((error) =>
-          res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' })
-        );
-        // Effacement de l'image en cas d'erreur 400
-        if (req.file) {
-          eraseImg(req.file.path);
-        }
+        .then(() => {
+          // Supprimer l'ancienne image si elle a été modifiée avec la requête
+          if (req.file) {
+            eraseImg(`./images/${filename}`);
+          }
+          res.status(200).json({ message: 'Objet modifié !' });
+        })
+        .catch((error) => {
+          // Gérer l'erreur de mise à jour du livre
+          console.error('Une erreur s\'est produite lors de la mise à jour du livre :', error);
+          res.status(400).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
+          // Supprimer l'image en cas d'erreur 400
+          if (req.file) {
+            eraseImg(req.file.path);
+          }
+        });
     })
     .catch((error) => {
       // Gérer toutes les autres erreurs
       console.error('Une erreur s\'est produite lors de la mise à jour du livre :', error);
       res.status(500).json({ error, message: 'Une erreur s\'est produite lors de la mise à jour du livre.' });
 
-      // Effacement de l'image en cas d'erreur 500
+      // Supprimer l'image en cas d'erreur 500
       if (req.file) {
         eraseImg(req.file.path);
       }
     });
 };
+
 
 // GET all books
 exports.getAllBooks = (req, res, next) => {
