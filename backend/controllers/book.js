@@ -73,7 +73,7 @@ exports.putBook = (req, res, next) => {
 
       // Vérifier si l'utilisateur est le créateur du livre
       if (book.userId !== req.auth.userId) {
-        return res.status(403).json({ message: 'Mauvais créateur' });
+        return res.status(403).json({ message: '403: unauthorized request' });
       }
 
       // Séparation du nom du fichier image existant

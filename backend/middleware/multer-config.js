@@ -27,3 +27,34 @@ const storage = multer.diskStorage({
 
 // Exporter la configuration de multer en utilisant le stockage défini ci-dessus, permettant de gérer l'upload d'un seul fichier
 module.exports = multer({ storage: storage }).single('image');
+
+
+
+
+// const multer = require('multer');
+// const { GridFsStorage } = require('multer-gridfs-storage');
+// const sharp = require('sharp');
+
+// // Créer une instance du stockage GridFS pour multer
+// const storage = new GridFsStorage({
+//   url: 'MONGODB_URI', // URL de connexion à la base de données MongoDB
+//   file: async (req, file) => {
+//     // Lire le fichier image en utilisant Sharp et le redimensionner en format WebP
+//     const image = sharp(file.buffer);
+//     const resizedImageBuffer = await image.resize(206, 260, { fit: 'contain' }).toFormat('webp').toBuffer();
+
+//     // Retourner les informations du fichier à stocker dans MongoDB
+//     return {
+//       bucketName: 'images', // Nom de la collection où les images seront stockées
+//       filename: `${Date.now()}-${file.originalname}`, // Nom du fichier dans la base de données (ici, j'utilise un timestamp pour le rendre unique)
+//       contentType: 'image/webp', // Type de contenu pour l'image redimensionnée en format WebP
+//       metadata: { originalName: file.originalname }, // Métadonnées facultatives, vous pouvez les personnaliser selon vos besoins
+//       buffer: resizedImageBuffer, // Buffer de l'image redimensionnée à stocker dans MongoDB
+//     };
+//   },
+// });
+
+// // Utiliser multer avec le stockage GridFS pour gérer l'upload d'un seul fichier 'image'
+// const upload = multer({ storage: storage }).single('image');
+
+// module.exports = upload;

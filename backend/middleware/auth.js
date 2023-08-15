@@ -20,7 +20,7 @@ module.exports = (req, res, next) => {
     next();
   } catch (error) {
     // Gestion des erreurs lors de la vérification du jeton
-    res.status(401).json({ error });
+    res.status(401).json({ error, message: "Requête non authentifiée !" });
   }
 };
 
