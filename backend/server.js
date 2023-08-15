@@ -1,5 +1,5 @@
 // Importer le module HTTP pour créer le serveur HTTP
-const http = require("http");
+const https = require("https");
 // Importer l'application Express créée dans le fichier "app.js"
 const app = require("./app");
 
@@ -47,7 +47,7 @@ const errorHandler = (error) => {
 };
 
 // Créer le serveur HTTP en utilisant l'application Express
-const server = http.createServer(app);
+const server = https.createServer(app);
 
 // Gérer les erreurs liées au serveur en utilisant la fonction errorHandler
 server.on("error", errorHandler);
